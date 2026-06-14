@@ -154,4 +154,73 @@ sequenceDiagram
     Bot-->>User: 🔔 "Ваша аренда подтверждена!"
 ```
 
+### 3. Схема Базы Данных (ER Diagram)
+```mermaid
+erDiagram
+    User ||--o{ Rental : makes
+    User ||--o{ Review : writes
+    Category ||--o{ Item : contains
+    Item ||--o{ Rental : rented_in
+    Item ||--o{ Review : receives
+    Discount ||--o{ Rental : applied_to
+    Location ||--o{ Rental : pickup_at
+
+    User {
+        Int id PK
+        String telegramId
+        String name
+        String phone
+        DateTime createdAt
+    }
+    
+    Item {
+        Int id PK
+        String name
+        String description
+        Float pricePerDay
+        Float deposit
+        String imageUrl
+    }
+    
+    Rental {
+        Int id PK
+        DateTime startDate
+        DateTime endDate
+        Float totalPrice
+        String status "PENDING, ACTIVE, COMPLETED, CANCELLED"
+        String deliveryType "PICKUP, DELIVERY"
+    }
+
+    Location {
+        Int id PK
+        String name
+        String address
+        Boolean isActive
+    }
+```
+
+### 4. Жизненный цикл статусов аренды (State Machine)
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING : Клиент оформляет заказ
+    
+    PENDING --> ACTIVE : Админ одобряет
+    PENDING --> CANCELLED : Админ отклоняет
+    
+    ACTIVE --> COMPLETED : Клиент возвращает вещь
+    ACTIVE --> CANCELLED : Форс-мажор / Отмена
+    
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+    
+    note right of PENDING
+        Товар забронирован,
+        ожидает подтверждения
+    end note
+    
+    note right of ACTIVE
+        Товар выдан клиенту
+    end note
+```
+
 Проект построен с использованием четкого разделения логики. API бэкенда (`/src/routes`) живет отдельно от бота (`/src/bot`), но они разделяют один экземпляр базы данных через Prisma. Админ-панель общается с бэкендом через защищенную обертку `fetchApi`.
