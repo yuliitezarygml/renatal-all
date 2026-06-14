@@ -1,0 +1,65 @@
+import { Router } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { checkAvailability } from '../services/rentalService';
+
+const router = Router();
+const prisma = new PrismaClient();
+
+router.get('/', async (req, res) => {
+  const rentals = await prisma.rental.findMany({ include: { user: true, item: true, discount: true } });
+  res.json(rentals);
+});
+
+router.post('/', async (req, res) => {
+  const { userId, itemId, discountId, startDate, endDate, totalPrice } = req.body;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const available = await checkAvailability(Number(itemId), start, end);
+  if (!available) {
+    return res.status(400).json({ error: 'Item is not available for the selected dates.' });
+  }
+
+  const rental = await prisma.rental.create({
+    data: {
+      userId: Number(userId),
+      itemId: Number(itemId),
+      discountId: discountId ? Number(discountId) : undefined,
+      startDate: start,
+      endDate: end,
+      totalPrice: Number(totalPrice),
+      status: 'PENDING'
+    }
+  });
+  res.json(rental);
+});
+
+router.put('/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  
+  const rental = await prisma.rental.update({
+    where: { id: Number(id) },
+    data: { status, notes },
+    include: { user: true, item: true }
+  });
+
+  // Notify user via Telegram
+  const bot = req.app.get('bot');
+  if (bot && rental.user.telegramId) {
+    let message = `🔔 Статус аренды R-${rental.id.toString().padStart(4, '0')} изменен на: ${status}`;
+    if (status === 'ACTIVE') message = `✅ Ваша аренда вещи "${rental.item.name}" подтверждена и началась!`;
+    if (status === 'CANCELLED') message = `❌ Аренда вещи "${rental.item.name}" была отменена администратором.`;
+    if (status === 'COMPLETED') message = `🏁 Аренда вещи "${rental.item.name}" успешно завершена. Спасибо, что выбрали нас!`;
+    
+    try {
+      await bot.telegram.sendMessage(rental.user.telegramId, message);
+    } catch (err) {
+      console.error('Failed to send telegram notification', err);
+    }
+  }
+
+  res.json(rental);
+});
+
+export default router;

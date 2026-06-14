@@ -1,0 +1,5 @@
+{
+  "name": "rental-plugin",
+  "description": "Agent team and orchestrator for building the rental service project (Express, Next.js, Telegram Bot).",
+  "version": "1.0.0"
+}
