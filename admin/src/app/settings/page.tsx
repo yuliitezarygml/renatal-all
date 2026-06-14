@@ -1,19 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Settings, Bell, Shield, Smartphone, Key, Save } from "lucide-react";
-import { useState } from "react";
+import { Settings, Bell, Shield, Smartphone, Key, Save, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("General");
+  const [toastMessage, setToastMessage] = useState("");
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      alert("Settings saved successfully!");
+      setToastMessage("Settings saved successfully!");
+      setTimeout(() => setToastMessage(""), 3000);
     }, 1000);
   };
 
@@ -293,6 +295,19 @@ export default function SettingsPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Custom Toast Notification */}
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-6 right-6 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl z-50"
+        >
+          <CheckCircle className="h-5 w-5 text-emerald-400" />
+          <span className="font-medium text-sm">{toastMessage}</span>
+        </motion.div>
+      )}
     </div>
   );
 }
