@@ -223,4 +223,33 @@ stateDiagram-v2
     end note
 ```
 
+### 5. Архитектура новых Premium-модулей
+```mermaid
+flowchart TB
+    classDef core fill:#0f172a,stroke:#3b82f6,stroke-width:3px,color:#fff,rx:10,ry:10
+    classDef feat fill:#3b82f6,stroke:#1e3a8a,stroke-width:2px,color:#fff,rx:5,ry:5
+    classDef lib fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#0f172a,rx:15,ry:15
+
+    Core{"🚀 Новые Premium Фичи"}:::core
+
+    Core --> A["📊 Аналитика (Dashboard)"]:::feat
+    A -.-> A1("Библиотека: Recharts"):::lib
+    A -.-> A2("Выручка за 6 мес + Топ товаров"):::lib
+
+    Core --> B["⏰ Автоматизация (Cron)"]:::feat
+    B -.-> B1("Библиотека: node-cron"):::lib
+    B -.-> B2("Напоминания за 1 день и при просрочке"):::lib
+
+    Core --> C["🧾 Чеки и Договоры (PDF)"]:::feat
+    C -.-> C1("Библиотека: PDFKit"):::lib
+    C -.-> C2("Авто-отправка документа в Telegram"):::lib
+
+    Core --> D["📸 Медиа (Uploads)"]:::feat
+    D -.-> D1("Библиотека: multer"):::lib
+    D -.-> D2("Локальная загрузка картинок товаров"):::lib
+    
+    Core --> E["🕵️‍♂️ Секретная Пасхалка"]:::feat
+    E -.-> E1("Магия в DevTools (F12) консоли"):::lib
+```
+
 Проект построен с использованием четкого разделения логики. API бэкенда (`/src/routes`) живет отдельно от бота (`/src/bot`), но они разделяют один экземпляр базы данных через Prisma. Админ-панель общается с бэкендом через защищенную обертку `fetchApi`.
