@@ -95,10 +95,10 @@ npm run dev
 ```mermaid
 flowchart TD
     %% Styling (3D Effects)
-    classDef frontend fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
-    classDef backend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
-    classDef db fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
-    classDef tg fill:#0ea5e9,stroke:#0369a1,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
+    classDef frontend fill:#3b82f6,stroke:#1d4ed8,stroke-width:4px,color:#fff;
+    classDef backend fill:#10b981,stroke:#047857,stroke-width:4px,color:#fff;
+    classDef db fill:#8b5cf6,stroke:#5b21b6,stroke-width:4px,color:#fff;
+    classDef tg fill:#0ea5e9,stroke:#0369a1,stroke-width:4px,color:#fff;
     
     subgraph ClientLayer ["🖥 Клиентский Слой"]
         AdminUI["💻 Админ-панель\n(Next.js / React)"]:::frontend
