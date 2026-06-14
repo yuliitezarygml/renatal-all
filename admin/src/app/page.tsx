@@ -2,26 +2,35 @@
 
 import { motion } from "framer-motion";
 import { 
-  TrendingUp, 
-  Users, 
   Package, 
-  CalendarCheck,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  Loader2
+  Users, 
+  CalendarCheck, 
+  DollarSign, 
+  Loader2, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  TrendingUp 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from "next/link";
 
 type Rental = {
   id: number;
   user: { name: string } | string;
   item: { name: string } | string;
-  totalPrice: number;
   status: string;
+};
+
+type DashboardStats = {
+  totalRevenue: string;
+  activeRentals: string;
+  totalUsers: string;
+  totalItems: string;
+  chartData: { name: string; total: number }[];
+  topItems: { name: string; revenue: number }[];
 };
 
 const defaultStats = [
@@ -34,6 +43,7 @@ const defaultStats = [
 export default function Dashboard() {
   const [recentRentals, setRecentRentals] = useState<Rental[]>([]);
   const [stats, setStats] = useState(defaultStats);
+  const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,6 +56,7 @@ export default function Dashboard() {
         try {
           const statsData = await fetchApi<any>("/stats");
           if (statsData) {
+            setDashboardData(statsData);
             setStats([
               { name: "Total Revenue", value: `$${statsData.totalRevenue}`, change: "Active", trend: "up", icon: DollarSign },
               { name: "Active Rentals", value: statsData.activeRentals.toString(), change: "Now", trend: "up", icon: CalendarCheck },
@@ -193,6 +204,49 @@ export default function Dashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* Analytics Section */}
+      {dashboardData && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-slate-900">Revenue Overview</h2>
+              <TrendingUp className="h-5 w-5 text-brand-500" />
+            </div>
+            <div className="h-72 w-full min-w-0 min-h-[288px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                <BarChart data={dashboardData.chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Bar dataKey="total" fill="#0ea5e9" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-6">Top Performing Items</h2>
+            <div className="space-y-4">
+              {dashboardData.topItems?.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <span className="font-medium text-slate-900 truncate max-w-[120px]">{item.name}</span>
+                  </div>
+                  <span className="font-bold text-emerald-600">${item.revenue}</span>
+                </div>
+              ))}
+              {(!dashboardData.topItems || dashboardData.topItems.length === 0) && (
+                <p className="text-slate-500 text-center py-4">No data available yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

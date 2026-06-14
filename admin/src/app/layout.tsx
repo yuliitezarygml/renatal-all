@@ -29,6 +29,21 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark');
                 }
               } catch (_) {}
+
+              setTimeout(() => {
+                console.log("%cОСТОРОЖНО!", "color: #ef4444; font-size: 50px; font-weight: bold; text-shadow: 2px 2px 0px rgba(0,0,0,0.2);");
+                console.log("%cWhoa, look at you! 🕵️‍♂️ You seem to have discovered the secret console! 🔍\\nWant to see some magic? ✨ Just type my first name and hit enter! 🎩🐇", "color: #ef4444; font-size: 16px; font-weight: bold; line-height: 1.5;");
+                console.log("%cПожалуйста, закройте эту вкладку, если вы не разработчик. Злоумышленники могут обманом заставить вас вставить сюда код для кражи данных.", "color: #64748b; font-size: 12px;");
+                
+                const magicTrigger = function() {
+                  console.log("%c✨ ТАДАААА! ✨", "color: #0ea5e9; font-size: 40px; font-weight: bold; text-shadow: 2px 2px 0px rgba(0,0,0,0.2);");
+                  console.log("%cВы взломали эту админку (шутка). Добро пожаловать в клуб! 🚀", "color: #10b981; font-size: 16px; font-weight: bold;");
+                  return "🎩🐇";
+                };
+                
+                Object.defineProperty(window, 'yulii', { get: magicTrigger });
+                Object.defineProperty(window, 'iulian', { get: magicTrigger });
+              }, 1000);
             `,
           }}
         />

@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { checkAvailability } from '../services/rentalService';
+import { generateRentalPdf } from '../services/pdfService';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -54,6 +57,22 @@ router.put('/:id/status', async (req, res) => {
     
     try {
       await bot.telegram.sendMessage(rental.user.telegramId, message);
+      
+      if (status === 'ACTIVE') {
+        const tmpDir = path.join(__dirname, '../../tmp');
+        if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir);
+        
+        const pdfPath = path.join(tmpDir, `Rental_R-${rental.id}.pdf`);
+        await generateRentalPdf(rental, pdfPath);
+        
+        await bot.telegram.sendDocument(rental.user.telegramId, {
+          source: pdfPath,
+          filename: `Договор_Аренды_R-${rental.id}.pdf`
+        }, { caption: '📄 Ваш электронный чек и договор аренды' });
+        
+        // Clean up
+        fs.unlinkSync(pdfPath);
+      }
     } catch (err) {
       console.error('Failed to send telegram notification', err);
     }

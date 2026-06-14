@@ -13,6 +13,9 @@ import discountsRouter from './routes/discounts';
 import locationsRouter from './routes/locations';
 import reviewsRouter from './routes/reviews';
 import statsRouter from './routes/stats';
+import uploadRouter from './routes/upload';
+import { startCronJobs } from './services/cronService';
+import path from 'path';
 
 dotenv.config();
 
@@ -22,6 +25,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Basic API routes
 app.get('/api/health', (req: Request, res: Response) => {
@@ -36,6 +40,7 @@ app.use('/api/discounts', discountsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/upload', uploadRouter);
 
 // Initialize Telegraf bot
 const botToken = process.env.BOT_TOKEN;
@@ -48,6 +53,9 @@ if (botToken && botToken !== 'YOUR_TELEGRAM_BOT_TOKEN_HERE') {
   
   // Launch bot gracefully
   bot.launch().catch(console.error);
+  
+  // Start cron jobs
+  startCronJobs(bot);
   
   // Enable graceful stop
   process.once('SIGINT', () => bot?.stop('SIGINT'));

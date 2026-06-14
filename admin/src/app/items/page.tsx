@@ -15,6 +15,7 @@ type Item = {
   pricePerDay: number;
   deposit: number;
   status?: string;
+  photoUrl?: string;
 };
 
 type Category = {
@@ -32,6 +33,7 @@ export default function ItemsPage() {
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [currentItem, setCurrentItem] = useState<Partial<Item>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Delete State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -67,6 +69,31 @@ export default function ItemsPage() {
     setModalMode("edit");
     setCurrentItem(item);
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsUploading(true);
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+    try {
+      // Bypass fetchApi for FormData since fetchApi forces JSON
+      const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"}/upload`;
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.photoUrl) {
+        setCurrentItem({ ...currentItem, photoUrl: data.photoUrl });
+      }
+    } catch (err) {
+      console.error('Upload failed', err);
+      alert('Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleOpenDelete = (item: Item) => {
@@ -184,9 +211,11 @@ export default function ItemsPage() {
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs">
-                            IMG
-                          </div>
+                          {item.photoUrl ? (
+                            <img src={`http://localhost:3001${item.photoUrl}`} alt={item.name} className="h-10 w-10 flex-shrink-0 rounded-lg object-cover" />
+                          ) : (
+                            <div className="h-10 w-10 flex-shrink-0 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs">IMG</div>
+                          )}
                           <div className="ml-4">
                             <div className="text-sm font-medium text-slate-900">{item.name}</div>
                             <div className="text-sm text-slate-500">ID: ITM-{item.id.toString().padStart(4, '0')}</div>
@@ -256,6 +285,22 @@ export default function ItemsPage() {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               placeholder="e.g. Sony A7IV Camera"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Image Upload</label>
+            <div className="flex items-center gap-4">
+              {currentItem.photoUrl && (
+                <img src={`http://localhost:3001${currentItem.photoUrl}`} alt="Preview" className="h-12 w-12 rounded-lg object-cover border border-slate-200" />
+              )}
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isUploading}
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition-colors disabled:opacity-50"
+              />
+              {isUploading && <Loader2 className="h-5 w-5 animate-spin text-brand-600" />}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
