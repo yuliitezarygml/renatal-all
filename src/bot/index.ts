@@ -350,8 +350,8 @@ export const setupBot = (bot: Telegraf) => {
     await ctx.reply('Опишите вашу проблему или задайте вопрос в одном сообщении. Мы передадим его менеджеру.');
   });
 
-  bot.action(/review_(\d+)_(\d+)_(\d+)/, async (ctx) => {
-    const rating = Number(ctx.match[1]);
+  bot.action(/review_([\d.]+)_(\d+)_(\d+)/, async (ctx) => {
+    const rating = parseFloat(ctx.match[1]);
     const itemId = Number(ctx.match[2]);
     const userId = Number(ctx.match[3]);
 
@@ -361,6 +361,19 @@ export const setupBot = (bot: Telegraf) => {
         itemId,
         userId,
         comment: 'Оставлено через бота'
+      }
+    });
+
+    // Recalculate Average Rating for the Item
+    const allReviews = await prisma.review.findMany({ where: { itemId } });
+    const totalRating = allReviews.reduce((sum, r) => sum + r.rating, 0);
+    const averageRating = totalRating / allReviews.length;
+
+    await prisma.item.update({
+      where: { id: itemId },
+      data: { 
+        averageRating,
+        reviewCount: allReviews.length
       }
     });
 

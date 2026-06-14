@@ -58,13 +58,21 @@ router.put('/:id/status', async (req, res) => {
     try {
       if (status === 'COMPLETED') {
         const kb = {
-          inline_keyboard: [[
-            { text: '1⭐️', callback_data: `review_1_${rental.item.id}_${rental.user.id}` },
-            { text: '2⭐️', callback_data: `review_2_${rental.item.id}_${rental.user.id}` },
-            { text: '3⭐️', callback_data: `review_3_${rental.item.id}_${rental.user.id}` },
-            { text: '4⭐️', callback_data: `review_4_${rental.item.id}_${rental.user.id}` },
-            { text: '5⭐️', callback_data: `review_5_${rental.item.id}_${rental.user.id}` }
-          ]]
+          inline_keyboard: [
+            [
+              { text: '1⭐️', callback_data: `review_1_${rental.item.id}_${rental.user.id}` },
+              { text: '1.5⭐️', callback_data: `review_1.5_${rental.item.id}_${rental.user.id}` },
+              { text: '2⭐️', callback_data: `review_2_${rental.item.id}_${rental.user.id}` },
+              { text: '2.5⭐️', callback_data: `review_2.5_${rental.item.id}_${rental.user.id}` },
+              { text: '3⭐️', callback_data: `review_3_${rental.item.id}_${rental.user.id}` }
+            ],
+            [
+              { text: '3.5⭐️', callback_data: `review_3.5_${rental.item.id}_${rental.user.id}` },
+              { text: '4⭐️', callback_data: `review_4_${rental.item.id}_${rental.user.id}` },
+              { text: '4.5⭐️', callback_data: `review_4.5_${rental.item.id}_${rental.user.id}` },
+              { text: '5⭐️', callback_data: `review_5_${rental.item.id}_${rental.user.id}` }
+            ]
+          ]
         };
         await bot.telegram.sendMessage(rental.user.telegramId, message + "\n\nОцените состояние вещи от 1 до 5 звезд:", { reply_markup: kb });
       } else {
