@@ -1,18 +1,49 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: rental_postgres
+  db:
+    image: postgres:15-alpine
+    container_name: rental_db
+    restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: rental
+      POSTGRES_PASSWORD: rental_password
       POSTGRES_DB: rental
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rental_backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://rental:rental_password@db:5432/rental?schema=public
+      - PORT=3001
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: rental_admin
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+    depends_on:
+      - backend
 
 volumes:
-  postgres_data:
+  pgdata:
