@@ -56,7 +56,20 @@ router.put('/:id/status', async (req, res) => {
     if (status === 'COMPLETED') message = `🏁 Аренда вещи "${rental.item.name}" успешно завершена. Спасибо, что выбрали нас!`;
     
     try {
-      await bot.telegram.sendMessage(rental.user.telegramId, message);
+      if (status === 'COMPLETED') {
+        const kb = {
+          inline_keyboard: [[
+            { text: '1⭐️', callback_data: `review_1_${rental.item.id}_${rental.user.id}` },
+            { text: '2⭐️', callback_data: `review_2_${rental.item.id}_${rental.user.id}` },
+            { text: '3⭐️', callback_data: `review_3_${rental.item.id}_${rental.user.id}` },
+            { text: '4⭐️', callback_data: `review_4_${rental.item.id}_${rental.user.id}` },
+            { text: '5⭐️', callback_data: `review_5_${rental.item.id}_${rental.user.id}` }
+          ]]
+        };
+        await bot.telegram.sendMessage(rental.user.telegramId, message + "\n\nОцените состояние вещи от 1 до 5 звезд:", { reply_markup: kb });
+      } else {
+        await bot.telegram.sendMessage(rental.user.telegramId, message);
+      }
       
       if (status === 'ACTIVE') {
         const tmpDir = path.join(__dirname, '../../tmp');

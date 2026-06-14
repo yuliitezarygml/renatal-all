@@ -162,7 +162,11 @@ export const setupBot = (bot: Telegraf) => {
     const location = await prisma.location.findUnique({ where: { id: locId } });
     
     session.booking.deliveryAddress = location ? `${location.name} (${location.address})` : 'Главный склад';
-    await askConfirmation(ctx, session.booking);
+    
+    session.step = 'AWAITING_PROMO';
+    await ctx.editMessageText('У вас есть промокод? Напишите его в ответном сообщении или нажмите "Пропустить".', Markup.inlineKeyboard([
+      [Markup.button.callback('⏭ Пропустить', 'skip_promo')]
+    ]));
   });
 
   bot.action('delivery_courier', async (ctx) => {
@@ -178,13 +182,68 @@ export const setupBot = (bot: Telegraf) => {
 
   bot.on('text', async (ctx, next) => {
     const session = (ctx as any).session;
-    if (session?.step === 'AWAITING_ADDRESS') {
-      session.booking.deliveryAddress = ctx.message.text;
+    const text = ctx.message.text;
+
+    // Support Chat System
+    if (session?.step === 'AWAITING_SUPPORT_MESSAGE') {
+      const adminId = process.env.ADMIN_TELEGRAM_ID;
       session.step = null;
-      await askConfirmation(ctx, session.booking, true);
-    } else {
-      return next();
+      if (adminId) {
+        await ctx.telegram.sendMessage(adminId, `🆘 Новое сообщение в поддержку от ${ctx.from.first_name} (@${ctx.from.username || 'no_user'}):\n\n${text}\n\n/reply_${ctx.from.id}`);
+        return ctx.reply('Ваше сообщение отправлено менеджеру. Мы ответим вам в ближайшее время!');
+      } else {
+        return ctx.reply('Извините, система поддержки временно недоступна.');
+      }
     }
+    
+    // Admin Reply System
+    if (text.startsWith('/reply_')) {
+      const parts = text.split(' ');
+      const targetId = parts[0].replace('/reply_', '');
+      const replyText = parts.slice(1).join(' ');
+      if (replyText) {
+        try {
+          await ctx.telegram.sendMessage(targetId, `👨‍💻 Ответ менеджера:\n\n${replyText}`);
+          return ctx.reply('Ответ успешно отправлен пользователю.');
+        } catch(e) {
+          return ctx.reply('Ошибка отправки. Возможно пользователь заблокировал бота.');
+        }
+      }
+    }
+
+    if (session?.step === 'AWAITING_ADDRESS') {
+      session.booking.deliveryAddress = text;
+      session.step = 'AWAITING_PROMO';
+      return ctx.reply('У вас есть промокод? Напишите его в ответном сообщении или нажмите "Пропустить".', Markup.inlineKeyboard([
+        [Markup.button.callback('⏭ Пропустить', 'skip_promo')]
+      ]));
+    } 
+    
+    if (session?.step === 'AWAITING_PROMO') {
+      const promoCode = text.trim();
+      const discount = await prisma.discount.findFirst({ where: { code: promoCode, isActive: true } });
+      if (discount) {
+        session.booking.discountId = discount.id;
+        session.booking.discountPercent = discount.percentage;
+        session.step = null;
+        await ctx.reply(`🎉 Промокод применен! Скидка: ${discount.percentage}%`);
+        await askConfirmation(ctx, session.booking, true);
+      } else {
+        return ctx.reply('❌ Промокод не найден или недействителен. Попробуйте другой или нажмите "Пропустить".', Markup.inlineKeyboard([
+          [Markup.button.callback('⏭ Пропустить', 'skip_promo')]
+        ]));
+      }
+      return;
+    }
+
+    return next();
+  });
+
+  bot.action('skip_promo', async (ctx) => {
+    const session = (ctx as any).session;
+    if (!session.booking) return;
+    session.step = null;
+    await askConfirmation(ctx, session.booking);
   });
 
   async function askConfirmation(ctx: any, booking: any, isNewMessage = false) {
@@ -193,6 +252,14 @@ export const setupBot = (bot: Telegraf) => {
 
     const days = differenceInDays(new Date(booking.endDate), new Date(booking.startDate));
     const total = booking.totalPrice + booking.deliveryFee;
+    let finalTotal = total;
+    let discountMsg = '';
+    
+    if (booking.discountPercent) {
+      const discountAmount = (booking.totalPrice * booking.discountPercent) / 100;
+      finalTotal = total - discountAmount;
+      discountMsg = `🎁 Скидка по промокоду (${booking.discountPercent}%): -$${discountAmount.toFixed(2)}\n`;
+    }
 
     const msg = `🧾 *Подтверждение заказа*\n\n` +
       `📦 Товар: ${item.name}\n` +
@@ -201,8 +268,9 @@ export const setupBot = (bot: Telegraf) => {
       `📍 Адрес: ${booking.deliveryAddress}\n\n` +
       `💰 Аренда: $${booking.totalPrice}\n` +
       (booking.deliveryFee > 0 ? `🛵 Доставка: $${booking.deliveryFee}\n` : '') +
+      discountMsg +
       `🛡 Залог: $${item.deposit}\n` +
-      `💵 *Итого к оплате (без залога): $${total}*\n\n` +
+      `💵 *Итого к оплате (без залога): $${finalTotal.toFixed(2)}*\n\n` +
       `Для оформления заказа необходимо ознакомиться и согласиться с Политикой конфиденциальности.`;
 
     const kb = Markup.inlineKeyboard([
@@ -229,12 +297,13 @@ export const setupBot = (bot: Telegraf) => {
     const user = await prisma.user.findUnique({ where: { telegramId } });
     if (!user) return ctx.reply('Пользователь не найден.');
 
-    const { itemId, startDate, endDate, finalTotal, deliveryType, deliveryAddress, deliveryFee } = session.booking;
+    const { itemId, startDate, endDate, finalTotal, deliveryType, deliveryAddress, deliveryFee, discountId } = session.booking;
     
     await prisma.rental.create({
       data: {
         userId: user.id,
         itemId,
+        discountId,
         startDate,
         endDate,
         totalPrice: finalTotal,
@@ -275,10 +344,33 @@ export const setupBot = (bot: Telegraf) => {
     });
     await ctx.reply(msg);
   });
+
+  bot.hears('🆘 Задать вопрос', async (ctx) => {
+    (ctx as any).session.step = 'AWAITING_SUPPORT_MESSAGE';
+    await ctx.reply('Опишите вашу проблему или задайте вопрос в одном сообщении. Мы передадим его менеджеру.');
+  });
+
+  bot.action(/review_(\d+)_(\d+)_(\d+)/, async (ctx) => {
+    const rating = Number(ctx.match[1]);
+    const itemId = Number(ctx.match[2]);
+    const userId = Number(ctx.match[3]);
+
+    await prisma.review.create({
+      data: {
+        rating,
+        itemId,
+        userId,
+        comment: 'Оставлено через бота'
+      }
+    });
+
+    await ctx.editMessageText(`Вы оценили заказ на ${rating}⭐️. Большое спасибо за ваш отзыв!`);
+  });
 };
 
 async function sendMainMenu(ctx: any) {
   await ctx.reply('Главное меню:', Markup.keyboard([
-    ['📚 Каталог', '📋 Мои аренды']
+    ['📚 Каталог', '📋 Мои аренды'],
+    ['🆘 Задать вопрос']
   ]).resize());
 }
