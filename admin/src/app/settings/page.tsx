@@ -66,53 +66,6 @@ export default function SettingsPage() {
                 <p className="text-sm text-slate-500">Update your company details and basic settings.</p>
               </div>
           
-          <form onSubmit={handleSave} className="p-6 space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-                <input 
-                  type="text" 
-                  defaultValue="Rental Service Inc."
-                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Support Email</label>
-                <input 
-                  type="email" 
-                  defaultValue="support@rental.com"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
-                <select className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="RUB">RUB (₽)</option>
-                  <option value="MDL">MDL (L)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Admin Telegram ID</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. 123456789"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-mono text-sm"
-                />
-                <p className="text-xs text-slate-500 mt-1">This ID receives support messages from the bot.</p>
-              </div>
-            </div>
-
-            <div className="pt-4 flex justify-end">
-              <button 
-                type="submit"
-                disabled={isSaving}
-                className="px-6 py-2.5 text-sm font-medium text-white bg-brand-600 rounded-xl hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-all shadow-sm flex items-center"
-              >
               <form onSubmit={handleSave} className="p-6 space-y-6">
                 <div className="space-y-4">
                   <div>
