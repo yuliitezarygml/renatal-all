@@ -35,12 +35,14 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Top Items
-    const topItemsMap: Record<string, number> = {};
+    const topItemsMap: Record<number, { name: string; revenue: number; rating: number }> = {};
     completedRentals.forEach(r => {
-      topItemsMap[r.item.name] = (topItemsMap[r.item.name] || 0) + r.totalPrice;
+      if (!topItemsMap[r.item.id]) {
+        topItemsMap[r.item.id] = { name: r.item.name, revenue: 0, rating: r.item.averageRating || 0 };
+      }
+      topItemsMap[r.item.id].revenue += r.totalPrice;
     });
-    const topItems = Object.entries(topItemsMap)
-      .map(([name, revenue]) => ({ name, revenue }))
+    const topItems = Object.values(topItemsMap)
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 

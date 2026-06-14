@@ -30,7 +30,7 @@ type DashboardStats = {
   totalUsers: string;
   totalItems: string;
   chartData: { name: string; total: number }[];
-  topItems: { name: string; revenue: number }[];
+  topItems: { name: string; revenue: number; rating: number }[];
 };
 
 const defaultStats = [
@@ -235,7 +235,12 @@ export default function Dashboard() {
                     <div className="h-8 w-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
                       {index + 1}
                     </div>
-                    <span className="font-medium text-slate-900 truncate max-w-[120px]">{item.name}</span>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-900 truncate max-w-[120px]">{item.name}</span>
+                      {item.rating > 0 && (
+                        <span className="text-xs font-medium text-amber-500 mt-0.5">⭐️ {item.rating.toFixed(1)}</span>
+                      )}
+                    </div>
                   </div>
                   <span className="font-bold text-emerald-600">${item.revenue}</span>
                 </div>

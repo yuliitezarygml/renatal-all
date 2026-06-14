@@ -16,6 +16,8 @@ type Item = {
   deposit: number;
   status?: string;
   photoUrl?: string;
+  averageRating?: number;
+  reviewCount?: number;
 };
 
 type Category = {
@@ -218,7 +220,16 @@ export default function ItemsPage() {
                           )}
                           <div className="ml-4">
                             <div className="text-sm font-medium text-slate-900">{item.name}</div>
-                            <div className="text-sm text-slate-500">ID: ITM-{item.id.toString().padStart(4, '0')}</div>
+                            <div className="text-xs mt-1 mb-0.5">
+                              {item.averageRating && item.averageRating > 0 ? (
+                                <span className="flex items-center text-amber-500 font-medium">
+                                  ⭐️ {item.averageRating.toFixed(1)} <span className="text-slate-400 ml-1 font-normal">({item.reviewCount})</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">Нет отзывов</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-400">ID: ITM-{item.id.toString().padStart(4, '0')}</div>
                           </div>
                         </div>
                       </td>
