@@ -89,5 +89,69 @@ npm run dev
 
 ---
 
-## 👨‍💻 Разработка и архитектура
-Проект построен с использованием чистой архитектуры. API роуты бэкенда (`/src/routes`) отделены от логики бота (`/src/bot`). Взаимодействие фронтенда с бэкендом происходит через удобную обертку `fetchApi` (`admin/src/lib/api.ts`).
+## 👨‍💻 Разработка и Архитектура
+
+### 1. Глобальная Архитектура (System Architecture)
+```mermaid
+flowchart TD
+    %% Styling (3D Effects)
+    classDef frontend fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
+    classDef backend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
+    classDef db fill:#8b5cf6,stroke:#5b21b6,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
+    classDef tg fill:#0ea5e9,stroke:#0369a1,stroke-width:2px,color:#fff,shadow:drop-shadow(4px 4px 5px rgba(0,0,0,0.4));
+    
+    subgraph ClientLayer ["🖥 Клиентский Слой"]
+        AdminUI["💻 Админ-панель\n(Next.js / React)"]:::frontend
+        TGBot["📱 Telegram App\n(Пользователь)"]:::tg
+    end
+
+    subgraph ServerLayer ["⚙️ Серверный Слой"]
+        API["🌐 REST API\n(Express.js + Node.js)"]:::backend
+        Telegraf["🤖 Bot Logic\n(Telegraf.js)"]:::backend
+    end
+
+    subgraph DataLayer ["🗄 Слой Данных"]
+        Prisma["🛠 Prisma ORM"]:::backend
+        DB[("🛢️ PostgreSQL\nБаза Данных")]:::db
+    end
+
+    %% Connections
+    AdminUI <==>|"HTTP JSON (Port 3001)"| API
+    TGBot <==>|"Telegram API"| Telegraf
+    API -.->|"Уведомления"| Telegraf
+    
+    API <==>|"Запросы"| Prisma
+    Telegraf <==>|"Запросы"| Prisma
+    
+    Prisma <==>|"SQL"| DB
+```
+
+### 2. Жизненный цикл заказа (User Flow)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 Клиент
+    participant Bot as 🤖 Telegram Бот
+    participant DB as 🗄 PostgreSQL
+    actor Admin as 👨‍💼 Администратор
+    participant Dashboard as 💻 Админ-панель
+    
+    User->>Bot: Выбирает вещь и даты
+    Bot->>DB: Проверка доступности (Prisma)
+    DB-->>Bot: Вещь свободна ✅
+    Bot->>User: Выбор доставки и принятие Правил
+    User->>Bot: Согласен (Подтверждает заказ)
+    Bot->>DB: Создание заказа со статусом PENDING
+    Bot-->>User: 🎉 "Бронь успешно создана!"
+    
+    Note over Admin,Dashboard: Работа администратора
+    Admin->>Dashboard: Открывает список аренд
+    Dashboard->>DB: GET /api/rentals
+    DB-->>Dashboard: Возвращает новый заказ
+    Admin->>Dashboard: Нажимает "Approve & Activate"
+    Dashboard->>DB: PUT status = ACTIVE
+    DB->>Bot: Сигнал: Статус изменен
+    Bot-->>User: 🔔 "Ваша аренда подтверждена!"
+```
+
+Проект построен с использованием четкого разделения логики. API бэкенда (`/src/routes`) живет отдельно от бота (`/src/bot`), но они разделяют один экземпляр базы данных через Prisma. Админ-панель общается с бэкендом через защищенную обертку `fetchApi`.
