@@ -8,10 +8,22 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("General");
   const [toastMessage, setToastMessage] = useState("");
+  
+  // Settings State
+  const [currency, setCurrency] = useState("USD");
+
+  useEffect(() => {
+    // Load saved settings on mount
+    const savedCurrency = localStorage.getItem("app_currency");
+    if (savedCurrency) setCurrency(savedCurrency);
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    
+    // Save to localStorage
+    localStorage.setItem("app_currency", currency);
     setTimeout(() => {
       setIsSaving(false);
       setToastMessage("Settings saved successfully!");
@@ -88,7 +100,11 @@ export default function SettingsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Currency</label>
-                    <select className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white">
+                    <select 
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white"
+                    >
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
                       <option value="RUB">RUB (₽)</option>
