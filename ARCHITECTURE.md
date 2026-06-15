@@ -1,28 +1,24 @@
-# EquipRent System Architecture
+# Архитектура Платформы EquipRent
 
-This document describes the high-level architecture and workflows of the EquipRent platform.
+В этом документе описывается глобальная архитектура, жизненные циклы и схемы базы данных нашей комплексной платформы для аренды оборудования. Платформа объединяет веб-сайт (Storefront), панель управления (Admin) и Telegram-бота.
 
-## 1. High-Level Architecture
+## 1. Глобальная Архитектура (System Architecture)
 
-The platform is built using a modern, scalable microservice-like architecture orchestrated by Docker Compose. It consists of the following core components:
-
-- **Nginx (Reverse Proxy)**: Routes incoming traffic to the appropriate container based on the URL path.
-- **Storefront (Next.js)**: The public-facing e-commerce application for customers.
-- **Admin Panel (Next.js)**: The private dashboard for managing equipment, orders, and settings.
-- **Backend API (Express.js)**: The central business logic layer serving both frontends.
-- **Database (PostgreSQL)**: The persistent storage layer accessed via Prisma ORM.
+Система построена на микросервисной архитектуре и оркестрируется с помощью Docker Compose.
 
 ```mermaid
 graph TD
-    Client((User Browser))
+    Client((Клиент / Браузер))
+    TG((Telegram App))
 
-    subnginx[Nginx Reverse Proxy]
+    subnginx[Nginx Reverse Proxy\n(Порт 80)]
     
     substorefront[Storefront Container\nNext.js: 3000]
     subadmin[Admin Container\nNext.js: 3000]
-    subbackend[Backend Container\nExpress: 3001]
+    subbackend[Backend API Container\nExpress: 3001]
+    subbot[Telegram Bot Container\nTelegraf / Node.js]
     
-    subdb[(PostgreSQL\nDatabase: 5432)]
+    subdb[(PostgreSQL\nБаза Данных: 5432)]
 
     Client -->|http://domain/| subnginx
     Client -->|http://domain/wp/admin| subnginx
@@ -33,76 +29,128 @@ graph TD
     subnginx -->|Location: /api| subbackend
     subnginx -->|Location: /uploads| subbackend
 
-    substorefront -->|Internal fetch| subbackend
-    subadmin -->|Internal fetch| subbackend
+    substorefront -->|Внутренние запросы| subbackend
+    subadmin -->|Внутренние запросы| subbackend
+    
+    TG -->|Webhook / Polling| subbot
+    subbot -->|Синхронизация| subbackend
 
     subbackend -->|Prisma ORM| subdb
+    subbot -->|Prisma ORM| subdb
 ```
 
-## 2. Dynamic Settings Workflow (Example: Footer)
+## 2. Жизненный цикл заказа (User Flow)
 
-To demonstrate how data flows through the system, here is the sequence of events when the Admin changes the dynamic footer text:
+Полный путь клиента от выбора товара до возврата оборудования (поддерживает как сайт, так и Telegram-бота).
 
 ```mermaid
 sequenceDiagram
-    actor Admin
-    participant AdminUI as Admin Panel
-    participant Nginx
-    participant API as Backend (Express)
-    participant DB as PostgreSQL
-    participant Storefront as Public Site
-    actor Customer
+    actor User as Клиент
+    participant UI as Storefront / Bot
+    participant API as Backend API
+    participant DB as База Данных
+    participant Admin as Администратор
 
-    Admin->>AdminUI: Updates Footer Text & Clicks Save
-    AdminUI->>Nginx: PUT /api/settings (with JWT)
-    Nginx->>API: Forwards request to Backend
-    API->>API: Validates Admin Role
-    API->>DB: prisma.setting.upsert()
-    DB-->>API: Success
-    API-->>AdminUI: 200 OK
-
-    Note over Storefront,API: Next.js ISR triggers every 60 seconds
-    Customer->>Storefront: Visits Homepage
-    Storefront->>API: GET /api/settings
-    API->>DB: Fetch settings
-    DB-->>API: Returns new footerText
-    API-->>Storefront: Returns JSON
-    Storefront-->>Customer: Renders page with new footer
+    User->>UI: Просмотр каталога
+    UI->>API: Запрос списка товаров
+    API-->>UI: Возврат доступных товаров
+    
+    User->>UI: Выбор дат и бронирование
+    UI->>API: Создание аренды (POST /api/rentals)
+    API->>DB: Сохранение (Статус: PENDING)
+    DB-->>API: Успешно
+    API-->>UI: Подтверждение брони
+    
+    Admin->>API: Проверка заказа (Одобрение/Отказ)
+    API->>DB: Обновление статуса (ACTIVE)
+    
+    User->>UI: Получение оборудования (Самовывоз/Доставка)
+    Note over User,Admin: Период аренды
+    User->>Admin: Возврат оборудования
+    Admin->>API: Закрытие заказа (COMPLETED)
+    API->>DB: Обновление статуса
 ```
 
-## 3. Data Schema Overview
+## 3. Схема Базы Данных (ER Diagram)
 
-The core data models managed by Prisma:
-
-- **User**: Customers and Admins. Stores credentials, contact info, and role.
-- **Item & Category**: The catalog of rental equipment.
-- **Rental**: Transactions linking a User to an Item for a specific date range.
-- **Review**: Customer feedback on items.
-- **Setting**: Key-value pairs for global application configuration (e.g., currency, footer text).
+Глобальная структура базы данных Prisma, обеспечивающая единый источник истины для сайта, админки и бота.
 
 ```mermaid
 erDiagram
-    USER ||--o{ RENTAL : makes
-    USER ||--o{ REVIEW : writes
-    CATEGORY ||--o{ ITEM : contains
-    ITEM ||--o{ RENTAL : booked_in
-    ITEM ||--o{ REVIEW : receives
-    DISCOUNT |o--o{ RENTAL : applied_to
+    User ||--o{ Rental : "совершает"
+    User ||--o{ Review : "пишет"
+    Category ||--o{ Item : "содержит"
+    Item ||--o{ Rental : "бронируется в"
+    Item ||--o{ Review : "получает"
+    Discount |o--o{ Rental : "применяется к"
 
-    USER {
-        int id
-        string role
+    User {
+        int id PK
+        string telegramId "Уникальный ID в TG"
         string email
+        string password
+        string role "CUSTOMER | ADMIN"
+        string avatar
     }
-    ITEM {
-        int id
-        float pricePerDay
+    
+    Item {
+        int id PK
         string name
+        float pricePerDay
+        float deposit
+        string[] photoUrls
+        int categoryId FK
     }
-    RENTAL {
-        int id
+    
+    Rental {
+        int id PK
+        int userId FK
+        int itemId FK
         date startDate
         date endDate
-        string status
+        float totalPrice
+        string status "PENDING|ACTIVE|COMPLETED"
+    }
+
+    Setting {
+        string key PK
+        string value "Динамические настройки (напр. footerText)"
     }
 ```
+
+## 4. Жизненный цикл статусов аренды (State Machine)
+
+Строгая диаграмма переходов статусов бронирования для предотвращения логических ошибок.
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: Создание заказа
+    
+    PENDING --> ACTIVE: Заказ подтвержден (Выдача)
+    PENDING --> CANCELLED: Отказ клиента или админа
+    
+    ACTIVE --> COMPLETED: Успешный возврат
+    ACTIVE --> CANCELLED: Досрочное расторжение с возвратом
+    
+    COMPLETED --> [*]
+    CANCELLED --> [*]
+```
+
+## 5. Архитектура новых Premium-модулей
+
+Платформа включает расширенные модули для улучшения пользовательского опыта (UX) и безопасности (Security).
+
+### 5.1 Модуль синхронизации (Telegram ↔ Storefront)
+- Единый профиль пользователя (Связь через `telegramId` и `email`).
+- Мгновенная синхронизация корзины и баланса (в реальном времени).
+- Дублирование уведомлений: если заказ сделан на сайте, чек приходит в Telegram.
+
+### 5.2 Модуль динамических настроек
+- Позволяет администратору управлять контентом публичного сайта без перезагрузки сервера.
+- Хранит данные в таблице `Setting`.
+- Storefront (Next.js) использует ISR (Incremental Static Regeneration) каждые 60 секунд для обновления UI (например, текст футера или контакты).
+
+### 5.3 Модуль юридической безопасности (Legal & Compliance)
+- Внедрены статические страницы `Terms of Service` и `Privacy Policy`.
+- Тексты соответствуют стандартам GDPR, PCI-DSS (обработка платежей) и AML (Anti-Money Laundering).
+- Строгая проверка возраста (18+) и финансовой ответственности арендатора на этапе бронирования.
