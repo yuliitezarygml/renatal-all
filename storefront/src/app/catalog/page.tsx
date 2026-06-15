@@ -6,7 +6,8 @@ import { ITEMS } from "@/data/items";
 export const dynamic = "force-dynamic";
 
 export default async function CatalogPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  // Use internal docker network URL for server-side fetching
+  const apiUrl = process.env.INTERNAL_API_URL || "http://backend:3001/api";
   let items = [];
   try {
     const res = await fetch(`${apiUrl}/items`, { cache: "no-store" });

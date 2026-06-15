@@ -5,7 +5,8 @@ import { ChevronLeft, Star, Calendar, ShieldCheck, Check } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function ItemPage({ params }: { params: { id: string } }) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  // Use internal docker network URL for server-side fetching
+  const apiUrl = process.env.INTERNAL_API_URL || "http://backend:3001/api";
   let item = null;
   
   try {
