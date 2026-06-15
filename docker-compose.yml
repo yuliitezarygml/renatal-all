@@ -45,5 +45,18 @@ services:
     depends_on:
       - backend
 
+  storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile
+    container_name: rental_storefront
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
