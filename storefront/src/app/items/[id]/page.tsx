@@ -2,10 +2,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, Star, Calendar, ShieldCheck, Check } from "lucide-react";
-import { ITEMS } from "@/data/items";
+export const dynamic = "force-dynamic";
 
-export default function ItemPage({ params }: { params: { id: string } }) {
-  const item = ITEMS.find((i) => i.id === params.id);
+export default async function ItemPage({ params }: { params: { id: string } }) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+  let item = null;
+  
+  try {
+    const res = await fetch(`${apiUrl}/items`, { cache: "no-store" });
+    if (res.ok) {
+      const items = await res.json();
+      item = items.find((i: any) => i.id === Number(params.id));
+    }
+  } catch (error) {
+    console.error("Failed to fetch items:", error);
+  }
 
   if (!item) {
     notFound();
@@ -23,8 +34,8 @@ export default function ItemPage({ params }: { params: { id: string } }) {
         <div className="space-y-4">
           <div className="relative aspect-[4/3] w-full rounded-3xl overflow-hidden bg-muted">
             <Image 
-              src={item.imageUrl} 
-              alt={item.title} 
+              src={item.photoUrl || "https://images.unsplash.com/photo-1504280650214-41d1e4eb41ce?q=80&w=2000&auto=format&fit=crop"} 
+              alt={item.name} 
               fill 
               className="object-cover"
               priority
@@ -34,8 +45,8 @@ export default function ItemPage({ params }: { params: { id: string } }) {
             {[1, 2, 3].map((_, i) => (
               <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted opacity-60 hover:opacity-100 transition-opacity cursor-pointer border border-transparent hover:border-primary">
                 <Image 
-                  src={item.imageUrl} 
-                  alt={`${item.title} angle ${i + 1}`} 
+                  src={item.photoUrl || "https://images.unsplash.com/photo-1504280650214-41d1e4eb41ce?q=80&w=2000&auto=format&fit=crop"} 
+                  alt={`${item.name} angle ${i + 1}`} 
                   fill 
                   className="object-cover"
                 />
@@ -47,15 +58,15 @@ export default function ItemPage({ params }: { params: { id: string } }) {
         {/* Right Column - Details */}
         <div className="flex flex-col">
           <div className="inline-block px-3 py-1 rounded-full bg-accent text-accent-foreground text-sm font-medium w-max mb-4">
-            {item.category}
+            {item.category?.name || "Equipment"}
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight mb-4">{item.title}</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight mb-4">{item.name}</h1>
           
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border/40">
             <div className="flex items-center gap-1">
               <Star className="w-5 h-5 fill-primary text-primary" />
-              <span className="font-semibold">{item.rating.toFixed(1)}</span>
-              <span className="text-muted-foreground ml-1">(128 reviews)</span>
+              <span className="font-semibold">{item.averageRating ? item.averageRating.toFixed(1) : "New"}</span>
+              <span className="text-muted-foreground ml-1">({item.reviewCount || 0} reviews)</span>
             </div>
             <div className="w-1 h-1 rounded-full bg-border" />
             <div className="text-green-600 font-medium flex items-center">

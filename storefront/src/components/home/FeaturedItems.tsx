@@ -4,10 +4,9 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { Star } from "lucide-react";
-import { ITEMS } from "@/data/items";
 
-export function FeaturedItems() {
-  const featuredItems = ITEMS.slice(0, 4);
+export function FeaturedItems({ items = [] }: { items?: any[] }) {
+  const featuredItems = items.slice(0, 4);
 
   return (
     <section className="py-24 bg-background">
@@ -35,22 +34,22 @@ export function FeaturedItems() {
               <Link href={`/items/${item.id}`} className="flex-1 flex flex-col">
                 <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                   <Image 
-                    src={item.imageUrl} 
-                    alt={item.title} 
+                    src={item.photoUrl || "https://images.unsplash.com/photo-1504280650214-41d1e4eb41ce?q=80&w=2000&auto=format&fit=crop"} 
+                    alt={item.name} 
                     fill 
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute top-3 left-3 bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-semibold">
-                    {item.category}
+                    {item.category?.name || "Equipment"}
                   </div>
                 </div>
                 
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-center gap-1 mb-2">
                     <Star className="w-4 h-4 fill-primary text-primary" />
-                    <span className="text-sm font-medium">{item.rating.toFixed(1)}</span>
+                    <span className="text-sm font-medium">{item.averageRating ? item.averageRating.toFixed(1) : "New"}</span>
                   </div>
-                  <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.title}</h3>
+                  <h3 className="font-semibold text-lg mb-1 line-clamp-1">{item.name}</h3>
                   <div className="mt-auto pt-4 flex items-center justify-between">
                     <span className="font-bold text-lg">${item.pricePerDay}<span className="text-sm font-normal text-muted-foreground">/day</span></span>
                   </div>

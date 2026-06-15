@@ -44,7 +44,7 @@ export function Hero() {
               <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
             <Link 
-              href="/how-it-works" 
+              href="/#how-it-works" 
               className="inline-flex items-center justify-center h-14 px-8 rounded-full border border-input bg-background font-medium text-lg hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               How it works

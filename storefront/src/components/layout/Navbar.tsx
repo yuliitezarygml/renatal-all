@@ -16,7 +16,7 @@ export function Navbar() {
             <Link href="/catalog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
               Catalog
             </Link>
-            <Link href="/how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            <Link href="/#how-it-works" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
               How it Works
             </Link>
           </nav>
