@@ -11,24 +11,52 @@ export default function SettingsPage() {
   
   // Settings State
   const [currency, setCurrency] = useState("USD");
+  const [footerText, setFooterText] = useState("© 2026 EquipRent. All rights reserved.");
 
   useEffect(() => {
     // Load saved settings on mount
     const savedCurrency = localStorage.getItem("app_currency");
     if (savedCurrency) setCurrency(savedCurrency);
+
+    // Fetch dynamic settings from API
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api'}/settings`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.footerText) setFooterText(data.footerText);
+      })
+      .catch(err => console.error("Failed to load settings:", err));
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
     // Save to localStorage
     localStorage.setItem("app_currency", currency);
-    setTimeout(() => {
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api'}/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ footerText })
+      });
+
+      if (res.ok) {
+        setToastMessage("Settings saved successfully!");
+      } else {
+        setToastMessage("Failed to save settings.");
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMessage("Error saving settings.");
+    } finally {
       setIsSaving(false);
-      setToastMessage("Settings saved successfully!");
       setTimeout(() => setToastMessage(""), 3000);
-    }, 1000);
+    }
   };
 
   return (
@@ -110,6 +138,18 @@ export default function SettingsPage() {
                       <option value="RUB">RUB (₽)</option>
                       <option value="MDL">MDL (L)</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Footer Copyright Text</label>
+                    <input 
+                      type="text" 
+                      value={footerText}
+                      onChange={(e) => setFooterText(e.target.value)}
+                      placeholder="e.g. © 2026 EquipRent. All rights reserved. sinkdev.dev"
+                      className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">This text appears at the bottom of the public storefront.</p>
                   </div>
 
                   <div>

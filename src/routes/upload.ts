@@ -22,14 +22,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post('/', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+router.post('/', upload.array('images', 10), (req, res) => {
+  if (!req.files || (req.files as Express.Multer.File[]).length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
   }
   
-  // Return the public URL for the file
-  const photoUrl = `/uploads/${req.file.filename}`;
-  res.json({ photoUrl });
+  // Return the public URLs for the files
+  const photoUrls = (req.files as Express.Multer.File[]).map(file => `/uploads/${file.filename}`);
+  res.json({ photoUrls });
 });
 
 export default router;

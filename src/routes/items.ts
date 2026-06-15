@@ -9,20 +9,44 @@ router.get('/', async (req, res) => {
   res.json(items);
 });
 
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  const item = await prisma.item.findUnique({
+    where: { id: Number(id) },
+    include: { category: true, reviews: true }
+  });
+  if (!item) return res.status(404).json({ error: 'Item not found' });
+  res.json(item);
+});
+
 router.post('/', async (req, res) => {
-  const { categoryId, name, description, photoUrl, pricePerDay, deposit } = req.body;
+  const { categoryId, name, description, photoUrls, pricePerDay, deposit } = req.body;
   const item = await prisma.item.create({
-    data: { categoryId: Number(categoryId), name, description, photoUrl, pricePerDay: Number(pricePerDay), deposit: Number(deposit) }
+    data: {
+      categoryId: Number(categoryId),
+      name,
+      description,
+      photoUrls: photoUrls || [],
+      pricePerDay: Number(pricePerDay),
+      deposit: Number(deposit),
+    }
   });
   res.json(item);
 });
 
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { categoryId, name, description, photoUrl, pricePerDay, deposit } = req.body;
+  const { categoryId, name, description, photoUrls, pricePerDay, deposit } = req.body;
   const item = await prisma.item.update({
     where: { id: Number(id) },
-    data: { categoryId: Number(categoryId), name, description, photoUrl, pricePerDay: Number(pricePerDay), deposit: Number(deposit) }
+    data: {
+      categoryId: categoryId ? Number(categoryId) : undefined,
+      name,
+      description,
+      photoUrls: photoUrls !== undefined ? photoUrls : undefined,
+      pricePerDay: pricePerDay ? Number(pricePerDay) : undefined,
+      deposit: deposit ? Number(deposit) : undefined,
+    }
   });
   res.json(item);
 });

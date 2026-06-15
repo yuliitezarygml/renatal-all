@@ -15,6 +15,7 @@ import reviewsRouter from './routes/reviews';
 import statsRouter from './routes/stats';
 import uploadRouter from './routes/upload';
 import authRouter from './routes/auth';
+import settingsRouter from './routes/settings';
 import { startCronJobs } from './services/cronService';
 import path from 'path';
 
@@ -43,6 +44,7 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/settings', settingsRouter);
 
 // Initialize Telegraf bot
 const botToken = process.env.BOT_TOKEN;

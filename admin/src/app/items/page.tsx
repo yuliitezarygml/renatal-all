@@ -4,8 +4,12 @@ import { motion } from "framer-motion";
 import { Plus, Search, Filter, Loader2, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { fetchApi } from "@/lib/api";
 import Modal from "@/components/ui/Modal";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 type Item = {
   id: number;
@@ -15,7 +19,8 @@ type Item = {
   pricePerDay: number;
   deposit: number;
   status?: string;
-  photoUrl?: string;
+  photoUrls?: string[];
+  description?: string;
   averageRating?: number;
   reviewCount?: number;
 };
@@ -87,8 +92,8 @@ export default function ItemsPage() {
         body: formData,
       });
       const data = await response.json();
-      if (data.photoUrl) {
-        setCurrentItem({ ...currentItem, photoUrl: data.photoUrl });
+      if (data.photoUrls && data.photoUrls.length > 0) {
+        setCurrentItem({ ...currentItem, photoUrls: data.photoUrls });
       }
     } catch (err) {
       console.error('Upload failed', err);
@@ -213,8 +218,8 @@ export default function ItemsPage() {
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {item.photoUrl ? (
-                            <img src={`http://localhost:3001${item.photoUrl}`} alt={item.name} className="h-10 w-10 flex-shrink-0 rounded-lg object-cover" />
+                          {item.photoUrls && item.photoUrls.length > 0 ? (
+                            <img src={`http://localhost:3001${item.photoUrls[0]}`} alt={item.name} className="h-10 w-10 flex-shrink-0 rounded-lg object-cover" />
                           ) : (
                             <div className="h-10 w-10 flex-shrink-0 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-bold text-xs">IMG</div>
                           )}
@@ -298,18 +303,38 @@ export default function ItemsPage() {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+            <ReactQuill 
+              theme="snow" 
+              value={currentItem.description || ""} 
+              onChange={(val) => setCurrentItem({...currentItem, description: val})} 
+              className="bg-white rounded-lg"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Image Upload</label>
             <div className="flex items-center gap-4">
-              {currentItem.photoUrl && (
-                <img src={`http://localhost:3001${currentItem.photoUrl}`} alt="Preview" className="h-12 w-12 rounded-lg object-cover border border-slate-200" />
+              {currentItem.photoUrls && currentItem.photoUrls.length > 0 && (
+                <div className="flex gap-2 mt-2">
+                  {currentItem.photoUrls.map((url, idx) => (
+                    <img key={idx} src={`http://localhost:3001${url}`} alt="Preview" className="h-12 w-12 rounded-lg object-cover border border-slate-200" />
+                  ))}
+                </div>
               )}
-              <input 
-                type="file" 
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isUploading}
-                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition-colors disabled:opacity-50"
-              />
+              <input type="file" multiple className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onChange={(e) => {
+                const data = new FormData();
+                Array.from((e.target as HTMLInputElement).files || []).forEach(file => {
+                  data.append('images', file);
+                });
+                fetch('http://localhost:3001/api/upload', {
+                  method: 'POST',
+                  body: data,
+                }).then(res => res.json()).then(data => {
+                  if (data.photoUrls) {
+                    setCurrentItem({...currentItem, photoUrls: [...(currentItem.photoUrls || []), ...data.photoUrls]});
+                  }
+                });
+              }} />
               {isUploading && <Loader2 className="h-5 w-5 animate-spin text-brand-600" />}
             </div>
           </div>

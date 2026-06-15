@@ -125,4 +125,19 @@ router.get('/me', authenticateJWT, async (req: any, res: any) => {
   }
 });
 
+// Update Current User (Me)
+router.put('/me', authenticateJWT, async (req: any, res: any) => {
+  try {
+    const { name, phone, avatar } = req.body;
+    const user = await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { name, phone, avatar }
+    });
+    const { password: _, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

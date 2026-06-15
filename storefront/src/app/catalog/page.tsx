@@ -38,7 +38,7 @@ export default async function CatalogPage() {
             <Link href={`/items/${item.id}`} className="flex-1 flex flex-col">
               <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                 <Image 
-                  src={item.photoUrl || "https://images.unsplash.com/photo-1504280650214-41d1e4eb41ce?q=80&w=2000&auto=format&fit=crop"} 
+                  src={(item.photoUrls && item.photoUrls.length > 0) ? (item.photoUrls[0].startsWith('http') ? item.photoUrls[0] : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || ''}${item.photoUrls[0]}`) : "https://images.unsplash.com/photo-1504280650214-41d1e4eb41ce?q=80&w=2000&auto=format&fit=crop"} 
                   alt={item.name} 
                   fill 
                   className="object-cover transition-transform duration-500 group-hover:scale-105"

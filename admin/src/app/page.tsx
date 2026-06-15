@@ -214,7 +214,7 @@ export default function Dashboard() {
               <TrendingUp className="h-5 w-5 text-brand-500" />
             </div>
             <div className="h-72 w-full min-w-0 min-h-[288px] relative">
-              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+              <ResponsiveContainer width="99%" height={288}>
                 <BarChart data={dashboardData.chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />

@@ -25,4 +25,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Start the application and sync database
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]

@@ -5,16 +5,25 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Menu, Search, ShoppingBag, User } from "lucide-react";
 
+import Image from "next/image";
+
 export function Navbar() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {}
-    }
+    // Custom event listener to update user if changed elsewhere
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {}
+      }
+    };
+    
+    handleStorageChange();
+    window.addEventListener("user-updated", handleStorageChange);
+    return () => window.removeEventListener("user-updated", handleStorageChange);
   }, []);
 
   return (
@@ -40,9 +49,21 @@ export function Navbar() {
           </button>
           
           {user ? (
-            <Link href="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-              <User className="w-4 h-4" />
-              <span className="text-sm font-medium hidden md:block">{user.name}</span>
+            <Link href="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors">
+              {user.avatar ? (
+                <div className="relative w-6 h-6 rounded-full overflow-hidden">
+                  <Image 
+                    src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || ''}${user.avatar}`} 
+                    alt={user.name} 
+                    fill 
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <User className="w-4 h-4 text-primary" />
+              )}
+              <span className="text-sm font-medium hidden md:block text-primary">{user.name}</span>
             </Link>
           ) : (
             <Link href="/login" className="text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
