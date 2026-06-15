@@ -153,7 +153,7 @@ export default function ProfilePage() {
             <div className="text-center py-16 bg-muted/20 border border-border/50 border-dashed rounded-xl">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-medium">No rentals yet</h3>
-              <p className="text-muted-foreground mt-1 mb-6">You haven't rented any equipment yet.</p>
+              <p className="text-muted-foreground mt-1 mb-6">You haven&apos;t rented any equipment yet.</p>
               <Link href="/catalog" className="inline-flex items-center justify-center h-10 px-6 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
                 Browse Catalog
               </Link>
