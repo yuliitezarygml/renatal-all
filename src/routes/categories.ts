@@ -5,22 +5,29 @@ const router = Router();
 const prisma = new PrismaClient();
 
 router.get('/', async (req, res) => {
-  const categories = await prisma.category.findMany();
+  const categories = await prisma.category.findMany({
+    include: {
+      children: true,
+      parent: true
+    }
+  });
   res.json(categories);
 });
 
 router.post('/', async (req, res) => {
-  const { name, description } = req.body;
-  const category = await prisma.category.create({ data: { name, description } });
+  const { name, description, parentId } = req.body;
+  const category = await prisma.category.create({ 
+    data: { name, description, parentId: parentId ? Number(parentId) : null } 
+  });
   res.json(category);
 });
 
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, description, parentId } = req.body;
   const category = await prisma.category.update({
     where: { id: Number(id) },
-    data: { name, description }
+    data: { name, description, parentId: parentId ? Number(parentId) : null }
   });
   res.json(category);
 });

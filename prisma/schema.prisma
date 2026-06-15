@@ -25,12 +25,15 @@ enum Role {
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
   description String?
+  parentId    Int?
+  parent      Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("Subcategories")
   items       Item[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Item {

@@ -11,6 +11,9 @@ type Category = {
   id: number;
   name: string;
   description: string;
+  parentId?: number | null;
+  parent?: Category;
+  children?: Category[];
   itemsCount?: number;
 };
 
@@ -46,7 +49,7 @@ export default function CategoriesPage() {
 
   const handleOpenAdd = () => {
     setModalMode("add");
-    setCurrentCategory({ name: "", description: "" });
+    setCurrentCategory({ name: "", description: "", parentId: null });
     setIsModalOpen(true);
   };
 
@@ -163,7 +166,14 @@ export default function CategoriesPage() {
                   </div>
                 </div>
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-1">{category.name}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-lg font-semibold text-slate-900">{category.name}</h3>
+                {category.parentId && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
+                    Subcategory of {category.parent?.name || "ID " + category.parentId}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-slate-500 mb-4 line-clamp-2">{category.description || "No description provided."}</p>
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
                 <span className="font-medium text-slate-700">{category.itemsCount || 0} Items</span>
@@ -203,6 +213,19 @@ export default function CategoriesPage() {
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-none"
               placeholder="Brief description of the category..."
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Parent Category (Optional)</label>
+            <select
+              value={currentCategory.parentId || ""}
+              onChange={(e) => setCurrentCategory({...currentCategory, parentId: e.target.value ? Number(e.target.value) : null})}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            >
+              <option value="">None (Top Level)</option>
+              {categories.filter(c => c.id !== currentCategory.id).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
             <button 
